@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User')
+const User = require('../models/User');
 const bcrypt = require("bcrypt");
+
+const { getUserFields } = require('./mixins/getUserFields');
 
 exports.signIn = async (req, res) => {
     let { email, password } = req.body
@@ -9,17 +11,20 @@ exports.signIn = async (req, res) => {
         if (!user) throw new Error('Incorrect Email or Password')
         const compare = await bcrypt.compare(password, user.password)
         if (!compare) throw new Error('Incorrect Email or Password')
-        const token = jwt.sign({ id: user.id }, process.env.PRIVATE_KEY);
-        res.send(token)
+        const token = jwt.sign({ id: user.id }, process.env.PRIVATE_KEY, { expiresIn: '1 hour', algorithm: 'HS256' });
+        res.send({ token })
     } catch(e) {
         res.status(402).send('Error with  login')
     }
 }
 
-exports.login = (_, res) => {
-    let filePath = __dirname.split('/');
-    filePath.pop()
-    filePath = filePath.join('/')
-    console.log(filePath)
-    res.sendFile(filePath + '/pages/auth/login.html')
+exports.me = async (req, res) => {
+    const { id } = req.user
+    try {
+        const user = await User.findById(id);
+        const formatUser = getUserFields(user)
+        res.status(200).send(formatUser)
+    } catch (e) {
+        res.status(500).send('Connection Error')
+    }
 }

@@ -13,6 +13,12 @@ exports.create = async (req, res) => {
     }
 }
 
-exports.new = (req, res) => {
-    getPage(res, '/user/create.html')
+exports.show = async (req, res) => {
+    const { id } = req.params
+    try {
+        const user = await User.findById(id);
+        res.status(200).send(user)
+    } catch(e) {
+        res.status(401).send('Error')
+    }
 }
